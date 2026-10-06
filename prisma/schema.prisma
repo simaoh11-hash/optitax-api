@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  cpf        String   @unique
+  email      String   @unique
+  senhaHash  String
+  criadoEm   DateTime @default(now())
+
+  empresas    Empresa[]
+  obrigacoes  Obrigacao[]
+  tokens      TokenRecuperacao[]
+}
+
+model Empresa {
+  id                    Int      @id @default(autoincrement())
+  razaoSocial           String
+  cnpj                  String
+  documentosProcessados Int      @default(0)
+  criadoEm              DateTime @default(now())
+
+  usuarioId  Int
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  obrigacoes Obrigacao[]
+
+  @@unique([usuarioId, cnpj])
+}
+
+model Obrigacao {
+  id          Int      @id @default(autoincrement())
+  documento   String
+  competencia String   // formato MM/AAAA
+  status      String   @default("Pendente") // Regular | Pendente | Atenção
+  valor       Float    @default(0)
+  criadoEm    DateTime @default(now())
+
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  empresaId Int?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
+}
+
+model TokenRecuperacao {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+}
